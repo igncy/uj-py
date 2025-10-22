@@ -9,7 +9,7 @@ n = 20845805685468500
 print('2.10:', len(line.split()))
 
 # 11
-print('2.11:', '_'.join(list(word)))
+print('2.11:', '_'.join(word))
 
 # 12
 print('2.12:', ''.join(x[0] for x in line.split()))
