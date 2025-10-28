@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # 1
 """
 ZADANIE 3.1
@@ -62,9 +60,10 @@ def z5(n):
     r1 = '|'
     r2 = '0'
     for i in range(1, n+1):
-        r1 += '.'*4 + '|'
+        r1 += '....|'
         r2 += str(i).rjust(5, ' ')
     return f'{r1}\n{r2}'
+
 print(z5(12))
 assert z5(12) == """\
 |....|....|....|....|....|....|....|....|....|....|....|....|
@@ -73,9 +72,10 @@ assert z5(12) == """\
 # 6
 def z6(a, b):
     r = '+---'*b + '+'
-    for x in range(a):
-        r += '\n' + '|   '*b + '|\n' + '+---' * b + '+'
+    for _ in range(a):
+        r += '\n' + '|   '*b + '|\n' + '+---'*b + '+'
     return r
+
 print(z6(2, 4))
 assert z6(2, 4) == """\
 +---+---+---+---+
@@ -89,14 +89,20 @@ def z8a(a, b):
     return set(a) & set(b)
 def z8b(a, b):
     return set(a) | set(b)
+
 print(z8a([1,2,3,5,7], [2,5,7,8])) # 2 5 7
 print(z8b([1,2,3,5,7], [2,5,7,8])) # 1 2 3 5 7 8
 print(z8a(['a','b','c'], ['a','c','d'])) # a c
 print(z8b(['a','b','c'], ['a','c','d'])) # a b c d
+assert z8a([1,2,3,5,7], [2,5,7,8]) == {2,5,7}
+assert z8b([1,2,3,5,7], [2,5,7,8]) == {1,2,3,5,7,8}
+assert z8a(['a','b','c'], ['a','c','d']) == {'a','c'}
+assert z8b(['a','b','c'], ['a','c','d']) == {'a','b','c','d'}
 
 # 9
 def z9(x):
     return list(map(sum, x))
+
 print(z9([[],[4],(1,2),[3,4],(5,6,7)]))
 assert z9([[],[4],(1,2),[3,4],(5,6,7)]) == [0,4,3,7,18]
 
@@ -116,15 +122,11 @@ def roman2int(s):
     n = 0
     prev = s[0]
     for c in s[1:]:
-        # if ROMAN[prev] >= ROMAN[c]:
-        #     n += ROMAN[prev]
-        # else:
-        #     n -= ROMAN[prev]
-        # n += ROMAN[prev] if ROMAN[prev] >= ROMAN[c] else -ROMAN[prev]
-        n += ROMAN[prev] * (1 if ROMAN[prev] >= ROMAN[c] else -1)
+        n += ROMAN[prev] if ROMAN[prev] >= ROMAN[c] else -ROMAN[prev]
         prev = c
     n += ROMAN[prev]
     return n
+
 print(roman2int('XVI'))
 print(roman2int('XLVII'))
 print(roman2int('MCMLXX'))

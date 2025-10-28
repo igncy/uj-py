@@ -19,7 +19,7 @@ print('2.12:', ''.join(x[-1] for x in line.split()))
 print('2.13:', sum(map(len, line.split())))
 
 # 14
-print('2.14:', max([(x, len(x)) for x in line.split()], key=lambda x: x[1]))
+print('2.14:', max([(len(x), x) for x in line.split()]))
 
 # 15
 print('2.15:', ''.join(str(x) for x in L))
