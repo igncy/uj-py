@@ -20,10 +20,10 @@ def is_zero(frac):                  # bool, typu [0, x]
     return frac[0] == 0
 
 def cmp_frac(frac1, frac2):         # -1 | 0 | +1
-    if frac1 == frac2:
-        return 0
+    pass
 
 def frac2float(frac):               # konwersja do float
+    #float('nan')
     return frac[0]/frac[1]
 
 # f1 = [-1, 2]      # -1/2
