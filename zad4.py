@@ -15,7 +15,10 @@ def z6(a, b):
 
 # 3
 def factorial(n):
-    return 1 if n<=1 else factorial(n-1)*n
+    f = 1
+    for i in range(1, n+1):
+        f *= i
+    return f
 
 for i in range(10):
     print(factorial(i), end=' ')
@@ -39,17 +42,17 @@ def odwracanie_iter(L, left, right):
         left += 1
         right -= 1
 
+def odwracanie_rec(L, left, right):
+    if left <= right:
+        L[left], L[right] = L[right], L[left]
+        odwracanie_rec(L, left+1, right-1)
+
 L=list(range(10))
 odwracanie_iter(L, 2, 5)
 print(L)
 L=list(range(10))
 odwracanie_iter(L, 4, 8)
 print(L)
-
-def odwracanie_rec(L, left, right):
-    if left <= right:
-        L[left], L[right] = L[right], L[left]
-        odwracanie_rec(L, left+1, right-1)
 
 L=list(range(10))
 odwracanie_rec(L, 2, 5)
