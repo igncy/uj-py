@@ -1,4 +1,4 @@
-from zad6_points import Point
+from points import Point
 
 class Rectangle:
     """Klasa reprezentująca prostokąt na płaszczyźnie."""
