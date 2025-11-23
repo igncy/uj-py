@@ -1,14 +1,12 @@
 from points import Point
 
-'''
-W pliku rectangles.py zdefiniować klasę Rectangle wraz z potrzebnymi metodami. Wykorzystać wyjątek ValueError do obsługi błędów. Napisać kod testujący moduł rectangles. 
-'''
-
 class Rectangle:
     """Klasa reprezentująca prostokąty na płaszczyźnie."""
 
     def __init__(self, x1, y1, x2, y2):
         # Chcemy, aby x1 < x2, y1 < y2.
+        if x1==x2==y1==y2:
+            raise ValueError('error: x1==x2==y1==y2')
         self.pt1 = Point(min(x1, x2), min(y1, y2))
         self.pt2 = Point(max(x1, x2), max(y1, y2))
 
@@ -36,7 +34,15 @@ class Rectangle:
         self.pt2+=p
 
     def intersection(self, other):  # część wspólna prostokątów
-        raise ValueError
+        x1, y1, x2, y2 = (
+            max(self.pt1.x, other.pt1.x),
+            max(self.pt1.y, other.pt1.y),
+            min(self.pt2.x, other.pt2.x),
+            min(self.pt2.y, other.pt2.y)
+        )
+        if x1>=x2 or y1>=y2:
+            raise ValueError('error: rectangles do not intersect')
+        return Rectangle(x1,y1,x2,y2)
 
     def cover(self, other):     # prostąkąt nakrywający oba
         return Rectangle(
@@ -76,6 +82,9 @@ class TestRectangle(unittest.TestCase):
         self.c = Rectangle(1,1,3,3)
         self.d = Rectangle(2,0,4,4)
 
+    def test_init(self):
+        self.assertRaises(ValueError, Rectangle, 0,0,0,0)
+
     def test_str(self):
         self.assertEqual(str(self.a), '[(0, 2), (5, 10)]')
         self.assertEqual(str(self.b), '[(1, 3), (3, 6)]')
@@ -107,7 +116,8 @@ class TestRectangle(unittest.TestCase):
     def test_intersection(self):
         self.assertEqual(self.a.intersection(self.b), self.b)
         self.assertEqual(self.c.intersection(self.d), Rectangle(2,1,3,3))
-        self.assertRaises(ValueError, Rectangle(0,0,1,1).intersection, Rectangle(2,2,3,3))
+        with self.assertRaises(ValueError):
+            Rectangle(0, 0, 1, 1).intersection(Rectangle(2,2,3,3))
 
     def test_cover(self):
         self.assertEqual(self.a.cover(self.b), self.a)
