@@ -23,7 +23,7 @@ class Rectangle:
         return not self == other
 
     def center(self):           # zwraca środek prostokąta
-        return Point(self.pt1.x+(self.pt2.x-self.pt1.x)/2, self.pt1.y+(self.pt2.y-self.pt1.y)/2)
+        return Point((self.pt1.x+self.pt2.x)/2, (self.pt1.y+self.pt2.y)/2)
 
     def area(self):             # pole powierzchni
         return abs(self.pt1.x-self.pt2.x)*abs(self.pt1.y-self.pt2.y)
