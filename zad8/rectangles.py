@@ -15,6 +15,46 @@ class Rectangle:
         pt1, pt2 = points
         return cls(pt1.x, pt1.y, pt2.x, pt2.y)
 
+    @property
+    def top(self):
+        return self.pt2.y
+
+    @property
+    def left(self):
+        return self.pt1.x
+
+    @property
+    def bottom(self):
+        return self.pt1.y
+
+    @property
+    def right(self):
+        return self.pt2.x
+
+    @property
+    def width(self):
+        return self.pt2.x-self.pt1.x
+
+    @property
+    def height(self):
+        return self.pt2.y-self.pt1.y
+
+    @property
+    def topleft(self):
+        return Point(self.pt1.x, self.pt2.y)
+
+    @property
+    def bottomleft(self):
+        return self.pt1
+
+    @property
+    def topright(self):
+        return self.pt2
+
+    @property
+    def bottomright(self):
+        return Point(self.pt2.x, self.pt1.y)
+
     def __str__(self):          # "[(x1, y1), (x2, y2)]"
         return f'[{self.pt1}, {self.pt2}]'
 
@@ -27,6 +67,7 @@ class Rectangle:
     def __ne__(self, other):        # obsługa rect1 != rect2
         return not self == other
 
+    @property
     def center(self):           # zwraca środek prostokąta
         return Point((self.pt1.x+self.pt2.x)/2, (self.pt1.y+self.pt2.y)/2)
 

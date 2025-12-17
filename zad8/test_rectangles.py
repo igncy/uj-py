@@ -32,6 +32,36 @@ class TestRectangle():
         assert Rectangle.from_points((pt1, pt2)) == a
         assert Rectangle.from_points((pt1, pt2)) != b
 
+    def test_top(self, a):
+        assert a.top == 10
+
+    def test_left(self, a):
+        assert a.left == 0
+
+    def test_bottom(self, a):
+        assert a.bottom == 2
+
+    def test_right(self, a):
+        assert a.right == 5
+
+    def test_width(self, a):
+        assert a.width == 5
+
+    def test_height(self, a):
+        assert a.height == 8
+
+    def test_topleft(self, a):
+        assert a.topleft == Point(0, 10)
+
+    def test_bottomleft(self, a):
+        assert a.bottomleft == Point(0, 2)
+
+    def test_topright(self, a):
+        assert a.topright == Point(5, 10)
+
+    def test_bottomright(self, a):
+        assert a.bottomright == Point(5, 2)
+
     def test_str(self, a, b):
         assert str(a) == '[(0, 2), (5, 10)]'
         assert str(b) == '[(1, 3), (3, 6)]'
@@ -49,8 +79,8 @@ class TestRectangle():
         assert not a != Rectangle(0, 2, 5, 10)
 
     def test_center(self, a, b):
-        assert a.center() == Point(2.5, 6)
-        assert b.center() == Point(2, 4.5)
+        assert a.center == Point(2.5, 6)
+        assert b.center == Point(2, 4.5)
 
     def test_area(self, a, b):
         assert a.area() == 40
