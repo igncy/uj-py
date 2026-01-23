@@ -1,17 +1,52 @@
-#!/usr/bin/env -S PYGAME_HIDE_SUPPORT_PROMPT= python
+#!/usr/bin/env -S PYGAME_HIDE_SUPPORT_PROMPT= pygame
 
 import colorsys
 import os
 
-os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = ''; import pygame as pg
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = ''
+
+import pygame as pg
+
 
 ROWS_PER_FRAME: int = 20
 
-#TODO pdoc
 
-def colour(n) -> tuple[int, int, int]:
-    if n == 0: return 0, 0, 0
-    return tuple(map(lambda x: int(255 * x), colorsys.hsv_to_rgb(0.95 * n, 0.8, 1.0)))
+#TODO
+# pdoc
+# numpy
+# multithreading
+# boundary tracing
+# mouse
+
+
+def colour(n: float) -> tuple[int, int, int, int]:
+    """Return an RGBA tuple based on the value of n."""
+    if n == 0: return 0, 0, 0, 255
+    return tuple(map(
+        lambda x: int(255 * x),
+        colorsys.hsv_to_rgb((0.5 + 1.5*n) % 1.0, 0.8, 0.9)
+    ))
+
+
+def colour(n: float) -> tuple[int, int, int]:
+    if n <= 0: return 0, 0, 0
+    steps = [
+        (0.0, (0, 7, 100)), # dark blue
+        (0.16, (32, 107, 203)), # blue
+        (0.42, (237, 255, 255)), # white
+        (0.65, (255, 170, 0)), # orange
+        (0.82, (181, 68, 11)),  # dark orange
+        (0.85, (0, 2, 0)), # black
+        (1.0, (237, 255, 255)) # white
+    ]
+    n = (0.7 * n) % 1.0
+    for i in range(len(steps) - 1):
+        n1, rgb1 = steps[i]
+        n2, rgb2 = steps[i + 1]
+        if n1 <= n <= n2:
+            # linear interpolation y = y1 + (y2-y1) * (x-x1) / (x2-x1)
+            t = (n-n1) / (n2-n1)
+            return tuple(int(rgb1[j] + (rgb2[j]-rgb1[j]) * t) for j in range(3))
 
 
 class App:
@@ -27,14 +62,15 @@ class App:
         self.bound = bound
         self.max_iter = max_iter
         self.power = power
-        pg.display.set_caption('Mandelbrot set')
-        self.bg_colour = 'black'
-        self.screen = pg.display.set_mode((self.width, self.height), pg.RESIZABLE)
-        self.buffer = pg.Surface((self.width, self.height))
+        self.screen = None
+        self.buffer = None
         self.running = False
         self.to_draw = True
         self.drawn_rows = 0
-        self.colours = [pg.Color(colour(i/max_iter)) for i in range(self.max_iter+1)]
+        self.colours = [pg.Color(colour(i / max_iter)) for i in range(self.max_iter + 1)]
+        self.camera_step = 0.03
+        self.zoom_step = 0.05
+
         x_length = 3.0
         y_length = 3.0
         x_center = -0.7
@@ -43,8 +79,6 @@ class App:
         self.x_max = x_center + x_length/2
         self.y_min = y_center - y_length/2
         self.y_max = y_center + y_length/2
-        self.camera_step = 0.1
-        self.zoom_step = 0.1
 
     def __del__(self):
         pg.quit()
@@ -55,10 +89,10 @@ class App:
         self.drawn_rows = 0
         self.to_draw = True
 
-    def _f(self, z, c):
-        return z*z + c if self.power == 2 else z**self.power + c
+    # def _f(self, z: complex, c: complex) -> complex:
+    #     return z*z + c if self.power == 2 else z**self.power + c
 
-    def mandelbrot(self):
+    def mandelbrot(self) -> bool:
         pixels = pg.PixelArray(self.buffer)
         width, height = self.width, self.height
         x_min = self.x_min
@@ -66,10 +100,12 @@ class App:
         y_min = self.y_min
         y_max = self.y_max
         max_iter = self.max_iter
-        bound2 = self.bound * self.bound
+        bound = self.bound
         colours = self.colours
 
         if self.power == 2:
+            bound2 = bound * bound
+
             for y in range(ROWS_PER_FRAME):
                 if self.drawn_rows >= height:
                     pixels.close()
@@ -80,7 +116,7 @@ class App:
                     x_ = x_min + (x_max-x_min) * x / (width-1)
                     # z = 0 + 0j
                     # c = complex(x_, y_)
-                    # c = x_ + y_*1j
+                    # c = x_ + 1j*y_
                     zr = zi = 0.0
                     for i in range(max_iter):
                         zr2 = zr * zr
@@ -99,6 +135,8 @@ class App:
                     pixels[x, y] = colours[iters]
                 self.drawn_rows += 1
         else:
+            power = self.power
+
             for y in range(ROWS_PER_FRAME):
                 if self.drawn_rows >= height:
                     pixels.close()
@@ -108,15 +146,13 @@ class App:
                 for x in range(width):
                     x_ = x_min + (x_max-x_min) * x / (width-1)
                     z = 0 + 0j
-                    # c = complex(x_, y_)
-                    c = x_ + y_*1j
+                    c = x_ + 1j*y_
                     for i in range(max_iter):
-                        # if abs(z) >= self.bound:
-                        if z.real*z.real + z.imag*z.imag >= self.bound*self.bound:
+                        if z.real*z.real + z.imag*z.imag >= bound*bound:
                             iters = i
                             break
                         else:
-                            z = z**self.power + c
+                            z = z**power + c
                     else:
                         iters = 0
                     pixels[x, y] = colours[iters]
@@ -175,40 +211,40 @@ class App:
         else:
             keys = pg.key.get_pressed()
             if keys[pg.K_w] or keys[pg.K_UP]:
-                """Move camera up on W or Up."""
                 self.y_min -= dy
                 self.y_max -= dy
             if keys[pg.K_s] or keys[pg.K_DOWN]:
-                """Move camera down on S or Down."""
                 self.y_min += dy
                 self.y_max += dy
             if keys[pg.K_a] or keys[pg.K_LEFT]:
-                """Move camera left on A or Left."""
                 self.x_min -= dx
                 self.x_max -= dx
             if keys[pg.K_d] or keys[pg.K_RIGHT]:
-                """Move camera right on D or Right."""
                 self.x_min += dx
                 self.x_max += dx
             if keys[pg.K_e] or keys[pg.K_PAGEUP]:
-                """Zoom in on E or Page Up."""
                 self.x_min += zx
                 self.x_max -= zx
                 self.y_min += zy
                 self.y_max -= zy
             if keys[pg.K_q] or keys[pg.K_PAGEDOWN]:
-                """Zoom out on Q or Page Down."""
                 self.x_min -= zx
                 self.x_max += zx
                 self.y_min -= zy
                 self.y_max += zy
+            else:
+                return True
 
         self.to_draw = True
         self.drawn_rows = 0
         return True
 
     def run(self):
+        self.screen = pg.display.set_mode((self.width, self.height), pg.RESIZABLE)
+        self.buffer = pg.Surface((self.width, self.height))
         self.running = True
+        pg.display.set_caption('Mandelbrot set')
+
         while self.running:
             if self.to_draw: self.draw_screen()
 
@@ -228,5 +264,5 @@ class App:
 
 if __name__ == '__main__':
 
-    app = App(700, 600, 2, 50, 2)
+    app = App(500, 400, 10, 50, 2)
     app.run()
