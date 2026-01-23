@@ -2,23 +2,14 @@
 
 import colorsys
 import os
-from unittest import case
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = ''; import pygame as pg
 
 #TODO pdoc
 
-def colour(t):
-    if t == 0: return 0, 0, 0
-    return tuple(map(lambda x: int(255 * x), colorsys.hsv_to_rgb(0.95*t, 0.8, 1.0)))
-
-
-def colour2(t):
-    return (
-        int(255 * t**1),
-        int(50 * t**1.2),
-        int(255 * t**0.8)
-    )
+def colour(n):
+    if n == 0: return 0, 0, 0
+    return tuple(map(lambda x: int(255 * x), colorsys.hsv_to_rgb(0.95 * n, 0.8, 1.0)))
 
 
 class App:
@@ -34,22 +25,22 @@ class App:
         self.bound = bound
         self.max_iter = max_iter
         self.power = power
-        self.window_title = 'Mandelbrot set'
+        pg.display.set_caption('Mandelbrot set')
         self.bg_colour = 'black'
-        self.screen = None
+        self.screen = pg.display.set_mode((self.width, self.height), pg.RESIZABLE)
+        self.temp_surface = pg.Surface((self.width, self.height), pg.RESIZABLE)
+        self.pixels = None
         self.running = False
-        self.redraw = True
-
+        self.to_draw = True
+        self.colours = [pg.Color(colour(i/max_iter)) for i in range(self.max_iter+1)]
         x_length = 3.0
         y_length = 3.0
-        x_center = -1.0
+        x_center = -0.7
         y_center = 0.0
-
-        self.x_min = x_center - x_length/2 + x_length*0.1
-        self.x_max = x_center + x_length/2 + x_length*0.1
-        self.y_min = y_center - y_length/2 + y_length*0.1
-        self.y_max = y_center + y_length/2 + y_length*0.1
-
+        self.x_min = x_center - x_length/2
+        self.x_max = x_center + x_length/2
+        self.y_min = y_center - y_length/2
+        self.y_max = y_center + y_length/2
         self.camera_step = 0.1
         self.zoom_step = 0.1
 
@@ -59,32 +50,40 @@ class App:
     def update_size(self):
         self.width, self.height = pg.display.get_surface().get_size()
 
+    def _f(self, z, c):
+        return z*z + c if self.power == 2 else z**self.power + c
+
     def mandelbrot(self, width, height):
+        pixels = pg.PixelArray(self.temp_surface)
+
         for y in range(height):
-            y_ = self.y_min + (self.y_max-self.y_min) * y / (width-1)
+            pg.event.pump()
+            y_ = self.y_min + (self.y_max-self.y_min) * y / (height-1)
             for x in range(width):
-                x_ = self.x_min + (self.x_max-self.x_min) * x / (height-1)
+                x_ = self.x_min + (self.x_max-self.x_min) * x / (width-1)
                 z = 0
                 c = complex(x_, y_)
                 for i in range(self.max_iter):
-                    if abs(z) >= self.bound:
-                        t = i
+                    # if abs(z) >= self.bound:
+                    if z.real*z.real + z.imag*z.imag >= self.bound*self.bound:
+                        iters = i
                         break
                     else:
-                        z = z**self.power + c
+                        z = self._f(z, c)
                 else:
-                    t = 0
-                self.screen.set_at((x, y), colour(t / self.max_iter))
+                    iters = 0
+                pixels[x, y] = self.colours[iters]
 
-    def draw_frame(self):
-        self.screen.fill(self.bg_colour)
+        pixels.close()
+
+    def draw_screen(self):
         self.mandelbrot(self.width, self.height)
+        self.screen.blit(self.temp_surface, (self.x_min, self.y_min))
         pg.display.flip()
 
     def handle_key(self, key) -> bool:
         dx = (self.x_max-self.x_min) * self.camera_step
         dy = (self.y_max-self.y_min) * self.camera_step
-
         zx = (self.x_max-self.x_min) * self.zoom_step
         zy = (self.y_max-self.y_min) * self.zoom_step
 
@@ -120,21 +119,20 @@ class App:
                 self.x_max += zx
                 self.y_min -= zy
                 self.y_max += zy
+            case _:
+                return True
 
-        self.redraw = True
+        self.to_draw = True
         return True
 
     def run(self):
-        self.screen = pg.display.set_mode((self.width, self.height), pg.RESIZABLE)
         self.running = True
-        pg.display.set_caption(self.window_title)
-
         while self.running:
             self.update_size()
 
-            if self.redraw:
-                self.draw_frame()
-                self.redraw = False
+            if self.to_draw:
+                self.draw_screen()
+                self.to_draw = False
 
             for event in pg.event.get():
                 if event.type == pg.QUIT:
@@ -144,9 +142,12 @@ class App:
                     if not self.handle_key(event.key):
                         self.running = False
                         break
+                if event.type == pg.VIDEORESIZE:
+                    self.update_size()
+                    self.to_draw = True
 
 
 if __name__ == '__main__':
 
-    app = App(800, 650, 2, 50, 2)
+    app = App(700, 600, 2, 50, 2)
     app.run()
