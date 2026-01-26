@@ -5,9 +5,11 @@ import sys
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = ''
 
-import pygame
+import pygame as pg
+
 
 #TODO obj w/ draw(): paddle, score (or player instead of paddle+score), net?, game/window/app, ball
+
 
 class Coordinate:
     def __init__(self, x, y):
@@ -54,7 +56,7 @@ class Game:
         width = 20
 
         for y in range(margin, self.app.HEIGHT - margin - length, margin + length):
-            pygame.draw.line(
+            pg.draw.line(
                 screen,
                 fg,
                 (x, y),
@@ -62,7 +64,7 @@ class Game:
                 width
             )
         y += length + margin
-        pygame.draw.line(
+        pg.draw.line(
             screen,
             fg,
             (x, y),
@@ -76,10 +78,10 @@ class Game:
 
 class App:
     def __init__(self, width=None, height=None):
-        if not pygame.get_init(): pygame.init()
+        if not pg.get_init(): pg.init()
 
         if not (width and height):
-            display_info = pygame.display.Info()
+            display_info = pg.display.Info()
             self.WIDTH, self.HEIGHT = display_info.current_w, display_info.current_h
         else:
             self.WIDTH = width
@@ -96,10 +98,10 @@ class App:
         self.dt = 0
 
     def __del__(self):
-        pygame.quit()
+        pg.quit()
 
     def draw_scanlines(self):
-        scanlines = pygame.Surface((self.WIDTH, self.HEIGHT)).convert_alpha()
+        scanlines = pg.Surface((self.WIDTH, self.HEIGHT)).convert_alpha()
         for i in range(0, self.HEIGHT, 3):
             scanlines.fill((0, 0, 0, 100), (0, i, self.WIDTH, 1))
         self.screen.blit(scanlines, self.screen.get_rect())
@@ -112,15 +114,15 @@ class App:
 
         for f in to_draw: f()
 
-        pygame.display.flip()
+        pg.display.flip()
         self.dt = self.clock.tick(self.FPS) / 1000
 
     @staticmethod
     def handle_key(key) -> bool:
-        # if key == pygame.K_q:
+        # if key == pg.K_q:
         #     return False
         match key:
-            case pygame.K_q:
+            case pg.K_q:
                 return False
         return True
 
@@ -129,10 +131,10 @@ class App:
             Player('Player 1'),
             PlayerAI('Player 2') if two_players else Player('Player 2')
         ))
-        self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT), pygame.RESIZABLE)
-        self.clock = pygame.time.Clock()
+        self.screen = pg.display.set_mode((self.WIDTH, self.HEIGHT), pg.RESIZABLE)
+        self.clock = pg.time.Clock()
         self.running = True
-        pygame.display.set_caption(self.WINDOW_TITLE)
+        pg.display.set_caption(self.WINDOW_TITLE)
         to_draw = (
             self.game.draw_net,
             self.game.draw_scores,
@@ -141,15 +143,15 @@ class App:
         )
 
         while self.running:
-            self.WIDTH, self.HEIGHT = pygame.display.get_surface().get_size()
+            self.WIDTH, self.HEIGHT = pg.display.get_surface().get_size()
 
             self.draw_frame(to_draw)
 
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
                     self.running = False
                     break
-                if event.type == pygame.KEYDOWN:
+                if event.type == pg.KEYDOWN:
                     if not self.handle_key(event.key):
                     # if not App.handle_key(event.key):
                         self.running = False

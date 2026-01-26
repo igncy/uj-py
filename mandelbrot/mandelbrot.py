@@ -1,4 +1,4 @@
-#!/usr/bin/env -S PYGAME_HIDE_SUPPORT_PROMPT= pygame
+#!/usr/bin/env -S PYGAME_HIDE_SUPPORT_PROMPT= python
 
 import colorsys
 import os
@@ -12,23 +12,23 @@ ROWS_PER_FRAME: int = 20
 
 
 #TODO
-# pdoc
+# documentation; pdoc?
 # numpy
 # multithreading
 # boundary tracing
-# mouse
-
-
-def colour(n: float) -> tuple[int, int, int, int]:
-    """Return an RGBA tuple based on the value of n."""
-    if n == 0: return 0, 0, 0, 255
-    return tuple(map(
-        lambda x: int(255 * x),
-        colorsys.hsv_to_rgb((0.5 + 1.5*n) % 1.0, 0.8, 0.9)
-    ))
+# mouse drag
+# display magnification
 
 
 def colour(n: float) -> tuple[int, int, int]:
+    """Return an RGB tuple based on the value of n."""
+    if n == 0: return 0, 0, 0
+    rgba = colorsys.hsv_to_rgb((0.5 + 1.5*n) % 1.0, 0.8, 0.9)
+    return tuple(int(255 * rgba[i]) for i in range(3))
+
+
+def colour2(n: float) -> tuple[int, int, int]:
+    """Return an RGB tuple based on the value of n."""
     if n <= 0: return 0, 0, 0
     steps = [
         (0.0, (0, 7, 100)), # dark blue
@@ -50,7 +50,7 @@ def colour(n: float) -> tuple[int, int, int]:
 
 
 class App:
-    def __init__(self, width=None, height=None, bound=2, max_iter=50, power=2):
+    def __init__(self, width=None, height=None, bound=2, max_iter=50, power=2, colour_func=colour2):
         if not pg.get_init(): pg.init()
 
         if not width or not height:
@@ -67,9 +67,9 @@ class App:
         self.running = False
         self.to_draw = True
         self.drawn_rows = 0
-        self.colours = [pg.Color(colour(i / max_iter)) for i in range(self.max_iter + 1)]
         self.camera_step = 0.03
         self.zoom_step = 0.05
+        self.colours = [colour_func(i / max_iter) for i in range(self.max_iter + 1)]
 
         x_length = 3.0
         y_length = 3.0
@@ -83,7 +83,7 @@ class App:
     def __del__(self):
         pg.quit()
 
-    def update_size(self):
+    def update_size(self) -> None:
         self.width, self.height = pg.display.get_surface().get_size()
         self.buffer = pg.Surface((self.width, self.height))
         self.drawn_rows = 0
@@ -161,17 +161,17 @@ class App:
         pixels.close()
         return False
 
-    def draw_screen(self):
+    def draw_screen(self) -> None:
         drawn_all = self.mandelbrot()
         self.screen.blit(self.buffer, (0, 0))
         pg.display.flip()
         if drawn_all: self.to_draw = False
 
     def handle_keys(self, key=None) -> bool:
-        dx = (self.x_max-self.x_min) * self.camera_step
-        dy = (self.y_max-self.y_min) * self.camera_step
-        zx = (self.x_max-self.x_min) * self.zoom_step
-        zy = (self.y_max-self.y_min) * self.zoom_step
+        dx = (self.x_max - self.x_min) * self.camera_step
+        dy = (self.y_max - self.y_min) * self.camera_step
+        zx = (self.x_max - self.x_min) * self.zoom_step
+        zy = (self.y_max - self.y_min) * self.zoom_step
 
         if key:
             match key:
@@ -211,23 +211,29 @@ class App:
         else:
             keys = pg.key.get_pressed()
             if keys[pg.K_w] or keys[pg.K_UP]:
+                """Move camera up on W or Up."""
                 self.y_min -= dy
                 self.y_max -= dy
             if keys[pg.K_s] or keys[pg.K_DOWN]:
+                """Move camera down on S or Down."""
                 self.y_min += dy
                 self.y_max += dy
             if keys[pg.K_a] or keys[pg.K_LEFT]:
+                """Move camera left on A or Left."""
                 self.x_min -= dx
                 self.x_max -= dx
             if keys[pg.K_d] or keys[pg.K_RIGHT]:
+                """Move camera right on D or Right."""
                 self.x_min += dx
                 self.x_max += dx
             if keys[pg.K_e] or keys[pg.K_PAGEUP]:
+                """Zoom in on E or Page Up."""
                 self.x_min += zx
                 self.x_max -= zx
                 self.y_min += zy
                 self.y_max -= zy
             if keys[pg.K_q] or keys[pg.K_PAGEDOWN]:
+                """Zoom out on Q or Page Down."""
                 self.x_min -= zx
                 self.x_max += zx
                 self.y_min -= zy
@@ -239,7 +245,7 @@ class App:
         self.drawn_rows = 0
         return True
 
-    def run(self):
+    def run(self) -> None:
         self.screen = pg.display.set_mode((self.width, self.height), pg.RESIZABLE)
         self.buffer = pg.Surface((self.width, self.height))
         self.running = True
@@ -260,9 +266,26 @@ class App:
                     break
                 if event.type == pg.VIDEORESIZE:
                     self.update_size()
+                if event.type == pg.MOUSEWHEEL:
+                    zx = (self.x_max - self.x_min) * self.zoom_step
+                    zy = (self.y_max - self.y_min) * self.zoom_step
+                    if event.y > 0:
+                        """Zoom in on Scroll Up."""
+                        self.x_min += zx
+                        self.x_max -= zx
+                        self.y_min += zy
+                        self.y_max -= zy
+                    else:
+                        """Zoom out on Scroll Down."""
+                        self.x_min -= zx
+                        self.x_max += zx
+                        self.y_min -= zy
+                        self.y_max += zy
+                    self.to_draw = True
+                    self.drawn_rows = 0
 
 
 if __name__ == '__main__':
 
-    app = App(500, 400, 10, 50, 2)
+    app = App(500, 400, 10, 50, 2, colour_func=colour2)
     app.run()
