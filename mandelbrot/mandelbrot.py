@@ -1,5 +1,13 @@
 #!/usr/bin/env -S PYGAME_HIDE_SUPPORT_PROMPT= python
 
+#TODO
+# documentation; pdoc?
+# numpy
+# multithreading
+# boundary tracing
+# mouse: move to cursor on click and scroll
+# display magnification
+
 import os
 from colorsys import hsv_to_rgb
 from typing import Callable
@@ -10,15 +18,6 @@ import pygame as pg
 
 
 ROWS_PER_FRAME: int = 20
-
-
-#TODO
-# documentation; pdoc?
-# numpy
-# multithreading
-# boundary tracing
-# mouse: move to cursor on click and scroll
-# display magnification
 
 
 def colour(n: float) -> tuple[int, int, int]:

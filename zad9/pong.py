@@ -1,14 +1,13 @@
 #!/usr/bin/env -S PYGAME_HIDE_SUPPORT_PROMPT= python
 
+#TODO obj w/ draw(): paddle, score (or player instead of paddle+score), net?, game/window/app, ball
+
 import os
 import sys
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = ''
 
 import pygame as pg
-
-
-#TODO obj w/ draw(): paddle, score (or player instead of paddle+score), net?, game/window/app, ball
 
 
 class Coordinate:
@@ -82,14 +81,14 @@ class App:
 
         if not (width and height):
             display_info = pg.display.Info()
-            self.WIDTH, self.HEIGHT = display_info.current_w, display_info.current_h
+            self.width, self.height = display_info.current_w, display_info.current_h
         else:
-            self.WIDTH = width
-            self.HEIGHT = height
+            self.width = width
+            self.height = height
 
-        self.WINDOW_TITLE = 'Pong'
-        self.BG_COLOUR = 'black'
-        self.FG_COLOUR = 'white'
+        self.window_title = 'Pong'
+        self.bg_colour = 'black'
+        self.fg_colour = 'white'
         self.FPS = 30
         self.screen = None
         self.clock = None
@@ -101,13 +100,13 @@ class App:
         pg.quit()
 
     def draw_scanlines(self):
-        scanlines = pg.Surface((self.WIDTH, self.HEIGHT)).convert_alpha()
-        for i in range(0, self.HEIGHT, 3):
-            scanlines.fill((0, 0, 0, 100), (0, i, self.WIDTH, 1))
+        scanlines = pg.Surface((self.width, self.height)).convert_alpha()
+        for i in range(0, self.height, 3):
+            scanlines.fill((0, 0, 0, 100), (0, i, self.width, 1))
         self.screen.blit(scanlines, self.screen.get_rect())
 
     def draw_frame(self, to_draw):
-        self.screen.fill(self.BG_COLOUR)
+        self.screen.fill(self.bg_colour)
 
         self.game.draw_net()
         self.draw_scanlines()
@@ -131,10 +130,10 @@ class App:
             Player('Player 1'),
             PlayerAI('Player 2') if two_players else Player('Player 2')
         ))
-        self.screen = pg.display.set_mode((self.WIDTH, self.HEIGHT), pg.RESIZABLE)
+        self.screen = pg.display.set_mode((self.width, self.height), pg.RESIZABLE)
         self.clock = pg.time.Clock()
         self.running = True
-        pg.display.set_caption(self.WINDOW_TITLE)
+        pg.display.set_caption(self.window_title)
         to_draw = (
             self.game.draw_net,
             self.game.draw_scores,
@@ -143,7 +142,7 @@ class App:
         )
 
         while self.running:
-            self.WIDTH, self.HEIGHT = pg.display.get_surface().get_size()
+            self.width, self.height = pg.display.get_surface().get_size()
 
             self.draw_frame(to_draw)
 
