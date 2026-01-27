@@ -1,81 +1,92 @@
 #!/usr/bin/env -S PYGAME_HIDE_SUPPORT_PROMPT= python
 
-#TODO obj w/ draw(): paddle, score (or player instead of paddle+score), net?, game/window/app, ball
-
 import os
+import random
 import sys
+from enum import Enum
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = ''
 
 import pygame as pg
 
 
-class Coordinate:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
+FPS = 30
+PADDLE_X = 25
+PADDLE_SIZE = (20, 120)
+PADDLE_SPEED = 300
+BALL_RADIUS = 25
+BALL_SPEED = 350
+MAX_SCORE = 11
 
-    # @classmethod
-    # def from_tuple(cls, xy_tuple):
-    #     # return cls(xy_tuple[0], xy_tuple[1])
-    #     return cls(*xy_tuple)
 
-    def tuple(self):
-        return self.x, self.y
+class Side(Enum):
+    LEFT = 0
+    RIGHT = 1
 
 
 class Player:
-    def __init__(self, name='Player'):
-        self.name = name
+    def __init__(self, game: 'Game', side: Side):
+        self.game = game
+        self.side = side
+        self.rect = pg.Rect(
+            PADDLE_X if side == Side.LEFT else game.width - PADDLE_X - PADDLE_SIZE[0],
+            game.height//2 - PADDLE_SIZE[1],
+            PADDLE_SIZE[0], PADDLE_SIZE[1])
         self.score = 0
-        self.pos = Coordinate(0, 0)
+        self.name = f'Player {side.value + 1}'
+
+    def update(self, dy):
+        self.rect.y += dy * PADDLE_SPEED * self.game.dt
+        if self.rect.y < 0:
+            self.rect.y = 0
+        elif self.rect.y > self.game.height - self.rect.height:
+            self.rect.y = self.game.height - self.rect.height
 
     def draw(self):
-        pass
+        pg.draw.rect(self.game.screen, self.game.fg_colour, self.rect)
 
 
-class PlayerAI(Player):
-    # def __init__(self):
-    #     super().__init__(name='Computer')
-    pass
+class Ball:
+    def __init__(self, game):
+        self.game = game
+        self.rect = pg.Rect(
+            game.width//2 - BALL_RADIUS//2,
+            game.height//2 - BALL_RADIUS//2,
+            BALL_RADIUS, BALL_RADIUS)
+        self.velocity = pg.Vector2(BALL_SPEED, BALL_SPEED)
+        self.reset()
+
+    def reset(self):
+        self.rect.center = (game.width//2, game.height//2)
+        self.velocity = pg.Vector2(BALL_SPEED, BALL_SPEED).rotate(random.randrange(361))
+
+    def update(self, players):
+        self.rect.x += self.velocity.x * self.game.dt
+        self.rect.y += self.velocity.y * self.game.dt
+
+        if self.rect.left < 0:
+            self.reset()
+            players[Side.RIGHT.value].score += 1
+            return
+        if self.rect.right > game.width:
+            self.reset()
+            players[Side.LEFT.value].score += 1
+            return
+
+        if self.rect.top <= 0 or self.rect.bottom >= game.height:
+            self.velocity.y *= -1
+            return
+
+        for player in players:
+            if self.rect.colliderect(player.rect):
+                self.velocity.x *= -1
+                return
+
+    def draw(self):
+        pg.draw.circle(game.screen, self.game.fg_colour, self.rect.center, BALL_RADIUS/2)
 
 
 class Game:
-    def __init__(self, app, players: tuple[Player, Player]):
-        self.app = app
-        self.players = players
-
-    def draw_net(self):
-        screen = self.app.screen
-        fg = self.app.FG_COLOUR
-        x = self.app.WIDTH / 2
-        y = 0
-        margin = 15
-        length = 30
-        width = 20
-
-        for y in range(margin, self.app.HEIGHT - margin - length, margin + length):
-            pg.draw.line(
-                screen,
-                fg,
-                (x, y),
-                (x, y + length),
-                width
-            )
-        y += length + margin
-        pg.draw.line(
-            screen,
-            fg,
-            (x, y),
-            (x, self.app.HEIGHT - margin),
-            width
-        )
-
-    def draw_scores(self):
-        pass
-
-
-class App:
     def __init__(self, width=None, height=None):
         if not pg.get_init(): pg.init()
 
@@ -86,82 +97,81 @@ class App:
             self.width = width
             self.height = height
 
-        self.window_title = 'Pong'
         self.bg_colour = 'black'
         self.fg_colour = 'white'
-        self.FPS = 30
         self.screen = None
         self.clock = None
-        self.game = None
         self.running = False
         self.dt = 0
 
     def __del__(self):
         pg.quit()
 
-    def draw_scanlines(self):
-        scanlines = pg.Surface((self.width, self.height)).convert_alpha()
-        for i in range(0, self.height, 3):
-            scanlines.fill((0, 0, 0, 100), (0, i, self.width, 1))
-        self.screen.blit(scanlines, self.screen.get_rect())
-
     def draw_frame(self, to_draw):
         self.screen.fill(self.bg_colour)
-
-        self.game.draw_net()
-        self.draw_scanlines()
-
-        for f in to_draw: f()
-
+        for obj in to_draw: obj.draw()
         pg.display.flip()
-        self.dt = self.clock.tick(self.FPS) / 1000
+        self.dt = self.clock.tick(FPS) / 1000
 
-    @staticmethod
-    def handle_key(key) -> bool:
-        # if key == pg.K_q:
-        #     return False
-        match key:
-            case pg.K_q:
-                return False
-        return True
-
-    def start(self, two_players=False):
-        self.game = Game(self, (
-            Player('Player 1'),
-            PlayerAI('Player 2') if two_players else Player('Player 2')
-        ))
-        self.screen = pg.display.set_mode((self.width, self.height), pg.RESIZABLE)
+    def start(self, ai=False):
+        self.screen = pg.display.set_mode((self.width, self.height))
         self.clock = pg.time.Clock()
         self.running = True
-        pg.display.set_caption(self.window_title)
-        to_draw = (
-            self.game.draw_net,
-            self.game.draw_scores,
-            *(player.draw for player in self.game.players),
-            self.draw_scanlines
+        drawables = (
+            *(players := (Player(self, Side.LEFT), Player(self, Side.RIGHT))),
+            ball := Ball(self)
         )
+        left_player = players[Side.LEFT.value]
+        right_player = players[Side.RIGHT.value]
+        winner = None
 
         while self.running:
-            self.width, self.height = pg.display.get_surface().get_size()
+            self.draw_frame(drawables)
 
-            self.draw_frame(to_draw)
+            if winner:
+                pg.display.set_caption(f'{winner.name} wins!')
+            else:
+                pg.display.set_caption(f'[{left_player.name}] {left_player.score} vs {right_player.score} [{right_player.name}]')
 
             for event in pg.event.get():
-                if event.type == pg.QUIT:
+                if (event.type == pg.QUIT
+                        or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE)):
                     self.running = False
                     break
-                if event.type == pg.KEYDOWN:
-                    if not self.handle_key(event.key):
-                    # if not App.handle_key(event.key):
-                        self.running = False
-                        break
+            else:
+                if not winner:
+                    keys = pg.key.get_pressed()
+                    for player in players:
+                        if player.score >= MAX_SCORE:
+                            winner = player
+                            break
+                        if ai and player.side == Side.LEFT:
+                            continue
+                        if player.side == Side.LEFT:
+                            key_up = pg.K_w
+                            key_down = pg.K_s
+                        else:
+                            key_up = pg.K_UP
+                            key_down = pg.K_DOWN
+                        player.update(keys[key_down] - keys[key_up])
+                    else:
+                        if ai:
+                            t = 15
+                            if -t < left_player.rect.centery - ball.rect.centery < t:
+                                dy = 0
+                            elif left_player.rect.centery < ball.rect.centery:
+                                dy = 1
+                            else:
+                                dy = -1
+                            left_player.update(dy)
+                        ball.update(players)
 
 
 if __name__ == '__main__':
 
-    game = App(1280, 720)
+    game = Game(1000, 600)
 
-    if len(sys.argv) > 1 and sys.argv[1] in ('--2', '-2'):
-        game.start(two_players=True)
-    else:
+    if len(sys.argv) > 1 and '2' in sys.argv[1]:
         game.start()
+    else:
+        game.start(ai=True)
