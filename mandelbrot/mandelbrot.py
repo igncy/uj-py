@@ -1,7 +1,8 @@
 #!/usr/bin/env -S PYGAME_HIDE_SUPPORT_PROMPT= python
 
-import colorsys
 import os
+from colorsys import hsv_to_rgb
+from typing import Callable
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = ''
 
@@ -16,14 +17,14 @@ ROWS_PER_FRAME: int = 20
 # numpy
 # multithreading
 # boundary tracing
-# mouse drag
+# mouse: move to cursor on click and scroll
 # display magnification
 
 
 def colour(n: float) -> tuple[int, int, int]:
     """Return an RGB tuple based on the value of n."""
     if n == 0: return 0, 0, 0
-    rgba = colorsys.hsv_to_rgb((0.5 + 1.5*n) % 1.0, 0.8, 0.9)
+    rgba = hsv_to_rgb((0.5 + 1.5*n) % 1.0, 0.8, 0.9)
     return tuple(int(255 * rgba[i]) for i in range(3))
 
 
@@ -50,7 +51,13 @@ def colour2(n: float) -> tuple[int, int, int]:
 
 
 class App:
-    def __init__(self, width=None, height=None, bound=2, max_iter=50, power=2, colour_func=colour2):
+    def __init__(self,
+                 width: int|None = None,
+                 height: int|None = None,
+                 bound: int = 2,
+                 max_iter: int = 50,
+                 power: int = 2,
+                 colour_func: Callable[[float], tuple[int, int, int]] = colour2):
         if not pg.get_init(): pg.init()
 
         if not width or not height:
@@ -86,8 +93,6 @@ class App:
     def update_size(self) -> None:
         self.width, self.height = pg.display.get_surface().get_size()
         self.buffer = pg.Surface((self.width, self.height))
-        self.drawn_rows = 0
-        self.to_draw = True
 
     # def _f(self, z: complex, c: complex) -> complex:
     #     return z*z + c if self.power == 2 else z**self.power + c
@@ -167,7 +172,7 @@ class App:
         pg.display.flip()
         if drawn_all: self.to_draw = False
 
-    def handle_keys(self, key=None) -> bool:
+    def handle_keys(self, key: int|None=None) -> bool:
         dx = (self.x_max - self.x_min) * self.camera_step
         dy = (self.y_max - self.y_min) * self.camera_step
         zx = (self.x_max - self.x_min) * self.zoom_step
@@ -246,6 +251,7 @@ class App:
         return True
 
     def run(self) -> None:
+        """Start a window and run the simulation."""
         self.screen = pg.display.set_mode((self.width, self.height), pg.RESIZABLE)
         self.buffer = pg.Surface((self.width, self.height))
         self.running = True
@@ -253,20 +259,22 @@ class App:
 
         while self.running:
             if self.to_draw: self.draw_screen()
+            redraw = False
 
             for event in pg.event.get():
-                if event.type == pg.QUIT:
-                    self.running = False
-                    break
-                if event.type == pg.KEYDOWN and not self.handle_keys(event.key):
-                    self.running = False
-                    break
-                if any(pg.key.get_pressed()) and not self.handle_keys():
+                if (event.type == pg.QUIT
+                        or (event.type == pg.KEYDOWN and not self.handle_keys(event.key))
+                        or (any(pg.key.get_pressed()) and not self.handle_keys())):
                     self.running = False
                     break
                 if event.type == pg.VIDEORESIZE:
                     self.update_size()
-                if event.type == pg.MOUSEWHEEL:
+                    redraw = True
+                elif event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+                    """Move camera to cursor's position on Left Click."""
+                    pass
+                elif event.type == pg.MOUSEWHEEL:
+                    """Move and zoom in/out on mouse scroll."""
                     zx = (self.x_max - self.x_min) * self.zoom_step
                     zy = (self.y_max - self.y_min) * self.zoom_step
                     if event.y > 0:
@@ -281,11 +289,13 @@ class App:
                         self.x_max += zx
                         self.y_min -= zy
                         self.y_max += zy
-                    self.to_draw = True
-                    self.drawn_rows = 0
+                    redraw = True
+            if redraw:
+                self.to_draw = True
+                self.drawn_rows = 0
 
 
 if __name__ == '__main__':
 
-    app = App(500, 400, 10, 50, 2, colour_func=colour2)
+    app = App(500, 400, 10, 30, 2, colour_func=colour2)
     app.run()
