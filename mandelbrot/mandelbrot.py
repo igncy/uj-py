@@ -1,7 +1,15 @@
 #!/usr/bin/env -S PYGAME_HIDE_SUPPORT_PROMPT= python
 
+"""Mandelbrot set fractal simulation.
+
+Written in Python 3.13 with pygame 2.6.1.
+
+Example usage:
+    app = App()
+    app.run()
+"""
+
 #TODO
-# documentation; pdoc?
 # numpy
 # multithreading
 # boundary tracing
@@ -18,6 +26,7 @@ import pygame as pg
 
 
 ROWS_PER_FRAME: int = 20
+"""Number of rows to display fer frame."""
 
 
 def colour(n: float) -> tuple[int, int, int]:
@@ -28,7 +37,7 @@ def colour(n: float) -> tuple[int, int, int]:
 
 
 def colour2(n: float) -> tuple[int, int, int]:
-    """Return an RGB tuple based on the value of n."""
+    """Return an RGB tuple based on the value of n. With blue, orange, and white colours."""
     if n <= 0: return 0, 0, 0
     steps = [
         (0.0, (0, 7, 100)), # dark blue
@@ -90,6 +99,7 @@ class App:
         pg.quit()
 
     def update_size(self) -> None:
+        """Update window size and reset the buffer surface."""
         self.width, self.height = pg.display.get_surface().get_size()
         self.buffer = pg.Surface((self.width, self.height))
 
@@ -97,6 +107,7 @@ class App:
     #     return z*z + c if self.power == 2 else z**self.power + c
 
     def mandelbrot(self) -> bool:
+        """Calculate the Mandelbrot set in chunks of ROWS_PER_FRAME rows."""
         pixels = pg.PixelArray(self.buffer)
         width, height = self.width, self.height
         x_min = self.x_min
@@ -166,12 +177,14 @@ class App:
         return False
 
     def draw_screen(self) -> None:
+        """Draw image to the screen."""
         drawn_all = self.mandelbrot()
         self.screen.blit(self.buffer, (0, 0))
         pg.display.flip()
         if drawn_all: self.to_draw = False
 
     def handle_keys(self, key: int|None=None) -> bool:
+        """Handle pressed key or all held keys if unspecified."""
         dx = (self.x_max - self.x_min) * self.camera_step
         dy = (self.y_max - self.y_min) * self.camera_step
         zx = (self.x_max - self.x_min) * self.zoom_step
