@@ -2,8 +2,6 @@
 
 """Mandelbrot set fractal simulation.
 
-Written in Python 3.13 with pygame 2.6.1.
-
 Example usage:
     app = App()
     app.run()
@@ -13,8 +11,7 @@ Example usage:
 # numpy
 # multithreading
 # boundary tracing
-# mouse: move to cursor on click and scroll
-# display magnification
+# move to cursor on click and scroll
 
 import os
 from colorsys import hsv_to_rgb
@@ -26,7 +23,7 @@ import pygame as pg
 
 
 ROWS_PER_FRAME: int = 20
-"""Number of rows to display fer frame."""
+"""Number of rows to display per frame."""
 
 
 def colour(n: float) -> tuple[int, int, int]:
@@ -45,7 +42,7 @@ def colour2(n: float) -> tuple[int, int, int]:
         (0.42, (237, 255, 255)), # white
         (0.65, (255, 170, 0)), # orange
         (0.82, (181, 68, 11)),  # dark orange
-        (0.85, (0, 2, 0)), # black
+        (0.85, (0, 0, 0)), # black
         (1.0, (237, 255, 255)) # white
     ]
     n = (0.7 * n) % 1.0
@@ -60,8 +57,8 @@ def colour2(n: float) -> tuple[int, int, int]:
 
 class App:
     def __init__(self,
-                 width: int|None = None,
-                 height: int|None = None,
+                 width: int | None = None,
+                 height: int | None = None,
                  bound: int = 2,
                  max_iter: int = 50,
                  power: int = 2,
@@ -183,7 +180,7 @@ class App:
         pg.display.flip()
         if drawn_all: self.to_draw = False
 
-    def handle_keys(self, key: int|None=None) -> bool:
+    def handle_keys(self, key: int | None=None) -> bool:
         """Handle pressed key or all held keys if unspecified."""
         dx = (self.x_max - self.x_min) * self.camera_step
         dy = (self.y_max - self.y_min) * self.camera_step
